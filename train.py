@@ -1,21 +1,18 @@
-import csv
+
 import os
 import cv2
-from PIL import Image
+
 import pandas as pd
-from tqdm import tqdm
+
 import numpy as np
 import torch
-from convnet import ConvNet
-from sklearn.metrics import classification_report
-# from transformers import SwinForImageClassification, AutoFeatureExtractor
-# from transformers import AutoProcessor
-# from datasets import load_dataset
+
+
 from CustomDataset import CustomTensorDataset
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 
 
-from transformers import SwinForImageClassification, AutoFeatureExtractor, BeitForImageClassification, AutoModelForImageClassification, ResNetForImageClassification
+from transformers import AutoFeatureExtractor, AutoModelForImageClassification
 
 
 import pytorch_lightning as pl
@@ -38,7 +35,7 @@ SAVING_OUTPUTS = './'
 train_set = ROOT_DATA_PATH + 'train.csv'
 test_set = ROOT_DATA_PATH + 'test.csv'
 images = ROOT_DATA_PATH + 'images/'
-MODEL_NAME = 'google/vit-base-patch16-224'
+MODEL_NAME = 'microsoft/resnet-50'
 
 
 # HYPERPARAMETERS
@@ -78,8 +75,8 @@ def main():
         id2label={str(i): c for i, c in enumerate(range(2))},
         label2id={c: str(i) for i, c in enumerate(range(2))},
         ignore_mismatched_sizes = True,
-        hidden_dropout_prob=0.3,
-        attention_probs_dropout_prob=0.3
+        # hidden_dropout_prob=0.3,
+        # attention_probs_dropout_prob=0.3
     )
 
 
@@ -96,14 +93,14 @@ def main():
     checkpoint_callback = ModelCheckpoint(
         monitor='val_f1',
         dirpath='{}{}/'.format(SAVING_OUTPUTS, 'output/model'),
-        filename='{}-{}-{}-{}'.format(MODEL_NAME, '3dprint', LEARNING_RATE, BATCH_SIZE)+'-{epoch:02d}-{val_f1:.4f}_cv',
+        filename='{}-{}-{}-{}'.format(MODEL_NAME, '3dprint', LEARNING_RATE, BATCH_SIZE)+'-{epoch:02d}-{val_f1:.4f}_cv_updated',
         save_top_k=3,
         mode='max',
     )
     early_stopping = EarlyStopping(monitor="val_f1", min_delta=0.00, patience=10, verbose=False, mode="max")
 
 
-    logger = TensorBoardLogger('lightning_logs', name=f'{MODEL_NAME}_lr_{LEARNING_RATE}_cv_epoch_{EPOCHS}')
+    logger = TensorBoardLogger('lightning_logs', name=f'{MODEL_NAME}_lr_{LEARNING_RATE}_cv_updated_epoch_{EPOCHS}')
 
 
     trainer = pl.Trainer(
