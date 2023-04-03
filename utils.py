@@ -6,16 +6,17 @@ import torch
 from transformers import AutoFeatureExtractor
 
 
-PRINT_IDS_FOR_VAL_ONLY = [1678589738, 1672794032, 1678413653, 1672774625]
-PRINTERS_FOR_VAL_ONLY = [22, 103]
+# PRINT_IDS_FOR_VAL_ONLY = [1672777638, 1672773342,1672767789, 1679265796, 1678415191]
+PRINT_IDS_FOR_VAL_ONLY = [1678816535, 1678736713]
+PRINTERS_FOR_VAL_ONLY = []
 
 
 def get_images_and_targets(labels_df: pd.DataFrame, images_path: str, image_processor: AutoFeatureExtractor, test=False, train_fraction=0.7, val=False):
     
     
-    raw_labels = None
+    raw_labels = labels_df.values
     if test == False:
-        filter = (labels_df['printer_id'].isin([103]) | labels_df['print_id'].isin(PRINT_IDS_FOR_VAL_ONLY))
+        filter = (labels_df['printer_id'].isin(PRINTERS_FOR_VAL_ONLY) | labels_df['print_id'].isin(PRINT_IDS_FOR_VAL_ONLY))
 
         if val == True:
             raw_labels = labels_df[filter].values
