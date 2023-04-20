@@ -70,22 +70,29 @@ class LightningModel(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         img_seq, label = batch
+        gt_label = F.one_hot(label.view(1, -1)[0].long(), num_classes=self.n_class).float()
         # if self.reshape_input:
         #     img_seq = torch.permute(img_seq, (0,2,1,3,4))
         
         logits = self.forward(img_seq) # output size: batch_size x 49
         probs = self.softmax(logits)
         preds = torch.max(probs, 1, keepdim=True)[1].int()
+
+        loss = self.criterion(logits, gt_label)
         
 
         # top1acc = torchmetrics.functional.accuracy(preds, label, task='binary')
         f1 = torchmetrics.functional.f1_score(preds, label, task='binary', average='weighted')
-        return {'f1': f1}
+        return {'loss':loss, 'f1': f1}
 
 
 
     
     def validation_epoch_end(self, outputs):
+
+        loss = sum(output['loss'] for output in outputs) / len(outputs)
+        self.logger.experiment.add_scalar("Loss/Validation", loss, self.current_epoch)
+        self.log('val_loss', loss, prog_bar=True)
 
         top1 = sum(output['f1'] for output in outputs) / len(outputs)
         self.logger.experiment.add_scalar("F1/Validation", top1, self.current_epoch)

@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 
 
 from transformers import AutoFeatureExtractor, AutoModelForImageClassification
+from caxton_model.network_module import ParametersClassifier
 
 
 import pytorch_lightning as pl
@@ -39,7 +40,7 @@ MODEL_NAME = 'microsoft/resnet-50'
 
 
 # HYPERPARAMETERS
-LEARNING_RATE = 1e-07
+LEARNING_RATE = 1e-05
 EPOCHS = 100
 BATCH_SIZE = 100
 
@@ -69,20 +70,13 @@ def main():
 
     print("data ready for training")
   
-    pretrained_model = AutoModelForImageClassification.from_pretrained(
-        MODEL_NAME,
-        num_labels=2,
-        id2label={str(i): c for i, c in enumerate(range(2))},
-        label2id={c: str(i) for i, c in enumerate(range(2))},
-        ignore_mismatched_sizes = True,
-        # hidden_dropout_prob=0.3,
-        # attention_probs_dropout_prob=0.3
-    )
+
+    cax_model = ParametersClassifier(2, lr=LEARNING_RATE)
 
 
 
 
-    light_model = LightningModel(pretrained_model, num_classes=2,reshape_input=False, learning_rate=LEARNING_RATE)
+    # light_model = LightningModel(pretrained_model, num_classes=2,reshape_input=False, learning_rate=LEARNING_RATE)
 
     print("model loaded")
 
@@ -93,14 +87,14 @@ def main():
     checkpoint_callback = ModelCheckpoint(
         monitor='val_f1',
         dirpath='{}{}/'.format(SAVING_OUTPUTS, 'output/model'),
-        filename='{}-{}-{}-{}'.format(MODEL_NAME, '3dprint', LEARNING_RATE, BATCH_SIZE)+'-{epoch:02d}-{val_f1:.4f}_cv_updated_some_prints_leftout',
-        save_top_k=3,
+        filename='{}-{}-{}-{}'.format(MODEL_NAME, '3dprint_caxton', LEARNING_RATE, BATCH_SIZE)+'-{epoch:02d}-{val_f1:.4f}_80_train_20_val',
+        save_top_k=5,
         mode='max',
     )
     early_stopping = EarlyStopping(monitor="val_f1", min_delta=0.00, patience=10, verbose=False, mode="max")
 
 
-    logger = TensorBoardLogger('lightning_logs', name=f'{MODEL_NAME}_lr_{LEARNING_RATE}_cv_updated_some_prints_leftout_epoch_{EPOCHS}')
+    logger = TensorBoardLogger('lightning_logs', name=f'{MODEL_NAME}_caxton_lr_{LEARNING_RATE}_80_train_20_val_epoch_{EPOCHS}')
 
 
     trainer = pl.Trainer(
@@ -115,7 +109,7 @@ def main():
     )
 
     print('Start Training...')
-    trainer.fit(light_model, trainloader, valloader)
+    trainer.fit(cax_model, trainloader, valloader)
 
 
     print("training done")
